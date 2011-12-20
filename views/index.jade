@@ -1,0 +1,73 @@
+script(src='/socket.io/socket.io.js')
+script(src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js")
+script(src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js")
+script(src="/javascripts/highstock.js")
+script(src="/javascripts/exporting.js")
+script
+	$(function() {
+		var max = 0;
+		var data = [0];
+		chart = new Highcharts.Chart({
+			chart: {
+				renderTo: 'container'
+			},
+			xAxis: {},
+			yAxis: {
+				title: {
+					text: 'he～ chart'
+				}
+			},
+			series: [{
+				data: data,type: 'spline'
+			}]
+		});
+		
+		
+		var socket = io.connect();
+		socket.on('connect',function(){
+			socket.on('add',function(data){
+				if(data > max){
+					max = data;
+					$('#max').text(max);
+				}
+				var series = chart.series[0];
+				var shift = series.data.length > 60;
+				series.addPoint(data, true, shift);
+			});
+			$('#h').click(function(){
+				socket.emit('heee');
+				this.focus();
+			});
+			
+			var lock = false;
+			socket.on('button',function(user){
+				if(!lock){
+					lock = true;
+					$('#' + user).effect('highlight', {color:'red'}, 100,function(){lock = false;});
+				}
+			});
+			socket.on('user',function(user){
+				for(var i in user){
+					if(!document.getElementById(i)){
+						var button = $('<button id=' + user[i] + '/>')
+						$('#usr' ).append(button);
+					}
+				}
+			});
+			socket.on('dis',function(user){
+				$('#' + user).remove();
+			});
+			socket.on('disconnect',function(){
+				$('#usr').html('');
+			});
+		});
+		$('#h').focus();
+	});
+body
+	div
+		span max:
+		span#max
+	button#h(style='height:100px;width:50px;') へぇ～
+	#container(style="height: 300px; width:600px;")
+	#usr(style="width:100px;")
+		
